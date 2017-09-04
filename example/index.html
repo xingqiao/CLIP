@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>QQ音乐图像裁剪Demo</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=0" />
+<style>
+html{-ms-text-size-adjust:100%;-webkit-text-size-adjust:100%}
+body{padding:1em;line-height:1.6;font-family:"Helvetica Neue",Helvetica,Arial,sans-serif;font-size:16px;background:#eee}
+body,h1,h2,h3,h4,h5,p,ul,ol,dl,dd,fieldset,textarea{margin:0}
+fieldset,legend,textarea,input,button{padding:0}
+button,input,select,textarea{font-family:inherit;font-size:100%;margin:0;*font-family:"Helvetica Neue",Helvetica,Arial,sans-serif}
+ul,ol{padding-left:0;list-style-type:none}
+a img,fieldset{border:0}
+a{text-decoration:none}
+html{-ms-text-size-adjust:100%;-webkit-text-size-adjust:100%;line-height:1.6}
+a{color:#607fa6;text-decoration:none}
+body,html{padding:0;height:100%;width:100%;-webkit-appearance:none;-webkit-tap-highlight-color:rgba(0,0,0,0)}
+h2{padding:1em}
+.btn{display:inline-block;margin:.3em;border:1px solid #10c7d3;background:#00b7c3;padding:.5em 1em;color:#fff;text-decoration:none;}
+</style>
+</head>
+<body>
+<h2>QQ音乐图像裁剪Demo</h2>
+<pre>
+new CLIP({
+        shape: CLIP.SHAPE.CIRCLE,
+        background: "#0ff"
+    })
+    .load("./test2.jpg")
+    .show()
+</pre>
+<div>
+    <hr>
+    <h3>示例</h3>
+    <a class="btn js_dlg_1" href="javascript:;">图片链接</a>
+    <a class="btn js_dlg_2" href="javascript:;">本地文件</a>
+    <a class="btn js_dlg_3" href="javascript:;">无效链接</a>
+    <hr>
+    <h3>裁剪结果</h3>
+    <div class="js_result"></div>
+</div>
+
+<script>window.debug=1</script>
+<script src="../dest/clip.js"></script>
+<script>
+var params = {
+    // shape: CLIP.SHAPE.SQUARE,
+    shape: CLIP.SHAPE.CIRCLE,
+    background: "#0ff",
+    width: 500,
+    height: 500
+};
+"loading load show hide error save".split(" ").forEach(function (evt) {
+    params["on" + evt] = function () {
+        console.log(evt, arguments);
+        if (evt == "save") {
+            var result = document.querySelector(".js_result");
+            result.innerHTML = "";
+            var img = new Image();
+            img.src = arguments[0].data;
+            img.style.width = "100%";
+            result.appendChild(img);
+        }
+    }
+})
+var clip = new CLIP(params);
+
+
+document.querySelector(".js_dlg_1").addEventListener("click", function () {
+    clip.load("./test2.jpg").show();
+});
+document.querySelector(".js_dlg_2").addEventListener("click", function () {
+    clip.clear().show();
+});
+document.querySelector(".js_dlg_3").addEventListener("click", function () {
+    clip.load("./test10.jpg").show();
+});
+
+// setTimeout(function() {
+//     document.querySelector(".js_dlg_1").click()
+// }, 500);
+
+</script>
+</body>
+</html>

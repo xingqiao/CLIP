@@ -1,8 +1,12 @@
 # clip.js - 图像裁剪
 
-## Demo
+## DEMO
 
 <http://y.qq.com/m/demo/ctools/clip.html>
+
+## GitHub
+
+<https://github.com/xingqiao/CLIP/>
 
 ## 支持功能
 
@@ -40,8 +44,8 @@ clip.load("./test.jpg").show();
 | 参数 | 类型 | 默认值 | 描述 |
 |-|-|-|-|
 | background | String | null | 裁剪出图片的背景色，默认为透明，保存成jpg时默认为白色 |
-| shape | String | `square` | 裁剪形状，值在 CLIP.SHAPE 中定义，默认是正方形 |
-| type | String | `image/png` | 保存的图片类型，默认是 image/png，值在 CLIP.TYPE 中定义 |
+| shape | String | "square" | 裁剪形状，值在 CLIP.SHAPE 中定义，默认是正方形 |
+| type | String | "image/png" | 保存的图片类型，默认是 image/png，值在 CLIP.TYPE 中定义 |
 | quality | Number | - | 保存的jpg图片质量，type=image/jpeg 时有效，有效值0~1 |
 | width | Number | - | 保存图片的宽度，不传该值时根据height的值等比缩放 |
 | height | Number | - | 保存图片的高度，不传该值时根据width的值等比缩放 |
@@ -78,84 +82,31 @@ clip.load("./test.jpg").show();
 
 ## 常量定义
 
-```javascript
+### 错误类型 CLIP.ERROR
 
-/**
- * 错误类型
- */
-CLIP.ERROR = {
-    /**
-     * 加载图片失败
-     */
-    LOAD_IMG_FAIL: 1,
+| 常量 | 值 | 描述 |
+|-|-|-|
+| CLIP.ERROR.LOAD_IMG_FAIL | 1 | 加载图片失败 |
+| CLIP.ERROR.SAVE_IMG_FAIL | 2 | 保存图片失败 |
+| CLIP.ERROR.OPEN_FILE_FAIL | 3 | 读取文件失败 |
 
-    /**
-     * 保存图片失败
-     */
-    SAVE_IMG_FAIL: 2
-};
+### 图片加载状态 CLIP.STATE
 
-/**
- * 状态
- */
-CLIP.STATE = {
-    /**
-     * 加载中
-     */
-    LOADING: 1,
+| 常量 | 值 | 描述 |
+|-|-|-|
+| CLIP.STATE.LOADING | 1 | 加载中 |
+| CLIP.STATE.LOADED | 2 | 加载完成 |
 
-    /**
-     * 加载中
-     */
-    LOADED: 2
-};
+### 裁剪形状 CLIP.SHAPE
 
-/**
- * 裁剪形状
- */
-CLIP.SHAPE = {
-    /**
-     * 圆形
-     */
-    CIRCLE: "circle",
+| 常量 | 值 | 描述 |
+|-|-|-|
+| CLIP.SHAPE.CIRCLE | "circle" | 圆形 |
+| CLIP.SHAPE.SQUARE | "square" | 正方形 |
 
-    /**
-     * 正方形
-     */
-    SQUARE: "square"
-};
+### 保存的图片类型 CLIP.TYPE
 
-/**
- * 保存的图片类型
- */
-CLIP.TYPE = {
-    JPG: "image/jpeg",
-    PNG: "image/png"
-};
-
-/**
- * 默认初始化参数
- */
-CLIP.defaultOptions = {
-    /**
-     * 裁剪出图片的背景色，默认为透明，保存成jpg时默认为白色
-     */
-    background: null,
-
-    /**
-     * 裁剪形状，默认是正方形，值在 CLIP.SHAPE 中定义
-     */
-    shape: CLIP.SHAPE.SQUARE,
-
-    /**
-     * 保存的图片类型，默认是 image/png，值在 CLIP.TYPE 中定义
-     */
-    type: CLIP.TYPE.PNG,
-
-    /**
-     * 保存的jpg图片质量，type=image/jpeg 时有效，有效值0~1
-     */
-    quality: ""
-};
-
-```
+| 常量 | 值 | 描述 |
+|-|-|-|
+| CLIP.TYPE.PNG | "image/png" | png |
+| CLIP.TYPE.JPG | "image/jpeg" | jpg |

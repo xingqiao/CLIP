@@ -46,17 +46,17 @@ clip.load("./test.jpg").show();
 | background | String | null | 裁剪出图片的背景色，默认为透明，保存成jpg时默认为白色 |
 | shape | String | "square" | 裁剪形状，值在 CLIP.SHAPE 中定义，默认是正方形 |
 | type | String | "image/png" | 保存的图片类型，默认是 image/png，值在 CLIP.TYPE 中定义 |
-| quality | Number | - | 保存的jpg图片质量，type=image/jpeg 时有效，有效值0~1 |
-| width | Number | - | 保存图片的宽度，不传该值时根据height的值等比缩放 |
-| height | Number | - | 保存图片的高度，不传该值时根据width的值等比缩放 |
+| quality | Number | \- | 保存的jpg图片质量，type=image/jpeg 时有效，有效值0~1 |
+| width | Number | \- | 保存图片的宽度，不传该值时根据height的值等比缩放 |
+| height | Number | \- | 保存图片的高度，不传该值时根据width的值等比缩放 |
 
 ## CLIP对象属性
 
 | 属性名 | 类型 | 值 | 描述 |
 |-|-|-|-|
-| result | Object | - | 返回base64链接形式的裁剪结果 |
-| width | Number | - | 获取或设置保存图片的宽度设置 |
-| height | Number | - | 获取或设置保存图片的高度设置 |
+| result | Object | \- | 返回base64链接形式的裁剪结果 |
+| width | Number | \- | 获取或设置保存图片的宽度设置 |
+| height | Number | \- | 获取或设置保存图片的高度设置 |
 
 ## CLIP对象方法
 

@@ -14,6 +14,7 @@
 
     // 工具方法库
     var utils = {
+        touch: "ontouchend" in doc ? true : false,
         $: function (s, p, fun) {
             var func = fun || "querySelector";
             return p && p[func] ? p[func](s) : doc[func](s);
@@ -31,28 +32,79 @@
             elem.style.transform = elem.style.webkitTransform = "translate(" + (-x) + "px," + (-y) + "px) scale(" + scale + ")";
         },
         /**
+         * 兼容 touchstart 和 mousedown
+         */
+        ondown: function (elem, callback) {
+            if (utils.touch) {
+                elem.addEventListener("touchstart", callback);
+            } else {
+                elem.addEventListener("mousedown", function (e) {
+                    e.touches = [{
+                        pageX: e.pageX,
+                        pageY: e.pageY
+                    }];
+                    callback.call(this, e);
+                });
+            }
+            return this;
+        },
+        /**
+         * 兼容 touchmove 和 mousemove
+         */
+        onmove: function (elem, callback) {
+            if (utils.touch) {
+                elem.addEventListener("touchmove", callback);
+            } else {
+                elem.addEventListener("mousemove", function (e) {
+                    e.touches = [{
+                        pageX: e.pageX,
+                        pageY: e.pageY
+                    }];
+                    callback.call(this, e);
+                });
+            }
+            return this;
+        },
+        /**
+         * 兼容 touchend 和 mouseup
+         */
+        onup: function (elem, callback) {
+            if (utils.touch) {
+                elem.addEventListener("touchend", callback);
+                elem.addEventListener("touchcancel", callback);
+            } else {
+                elem.addEventListener("mouseup", callback);
+            }
+            return this;
+        },
+        /**
          * tap点击
          */
         ontap: function (elem, callback) {
-            var x1 = null, y1 = null, x2 = null, y2 = null;
-            elem.addEventListener("touchstart", function (e) {
-                if (e.touches.length == 1) {
-                    x1 = x2 = e.touches[0].pageX;
-                    y1 = y2 = e.touches[0].pageY;
-                }
-            });
-            elem.addEventListener("touchmove", function (e) {
-                if (x1 != null) {
-                    x2 = e.touches[0].pageX;
-                    y2 = e.touches[0].pageY;
-                }
-            });
-            elem.addEventListener("touchend", function () {
-                if (Math.pow(x1 - x2, 2) + Math.pow(y1 - y2, 2) < 400) {
-                    callback.call(elem);
-                }
-                x1 = null;
-            });
+            if (utils.touch) {
+                var x1 = null, y1 = null, x2 = null, y2 = null;
+                elem.addEventListener("touchstart", function (e) {
+                    if (e.touches.length == 1) {
+                        x1 = x2 = e.touches[0].pageX;
+                        y1 = y2 = e.touches[0].pageY;
+                    }
+                });
+                elem.addEventListener("touchmove", function (e) {
+                    if (x1 != null) {
+                        x2 = e.touches[0].pageX;
+                        y2 = e.touches[0].pageY;
+                    }
+                });
+                elem.addEventListener("touchend", function () {
+                    if (Math.pow(x1 - x2, 2) + Math.pow(y1 - y2, 2) < 400) {
+                        callback.call(elem);
+                    }
+                    x1 = null;
+                });
+            } else {
+                elem.addEventListener("click", callback);
+            }
+            return this;
         },
         /**
          * 扩展对象
@@ -114,28 +166,6 @@
             return Object.prototype.toString.call(obj) === "[object " + (item.key || item) + "]";
         };
     });
-    utils.isTrueEmpty = function (obj) {
-        return obj === undefined || obj === null || obj === "" || (utils.isNumber(obj) && isNaN(obj));
-    };
-    utils.isEmpty = function (obj) {
-        if (utils.isTrueEmpty(obj)) {
-            return true;
-        } else if (utils.isObject(obj)) {
-            for (var key in obj) {
-                return !key && !0;
-            }
-            return true;
-        } else if (utils.isArray(obj)) {
-            return obj.length === 0;
-        } else if (utils.isString(obj)) {
-            return obj.length === 0;
-        } else if (utils.isNumber(obj)) {
-            return obj === 0;
-        } else if (utils.isBoolean(obj)) {
-            return !obj;
-        }
-        return false;
-    };
 
     /**
      * 播放器核心类
@@ -269,6 +299,9 @@
                 self._showLayer("loading");
             } else if (__.state.load != CLIP.STATE.LOADED) { // 未加载图片
                 self._showLayer("empty");
+            } else { // 加载完成
+                var iDoc = __.iframe.contentDocument;
+                utils.$(".js_clip_save", iDoc).className = "js_clip_save";
             }
         }
 
@@ -638,66 +671,97 @@
                     utils.transform(canvas, x, y, scale);
                 }
             };
-            cover.addEventListener("touchstart", function (e) {
-                if (__.state.show && __.state.load == CLIP.STATE.LOADED) {
-                    ontouch = 1;
-                    pos = [];
-                    for (var i = 0, l = e.touches.length; i < l; i++) {
-                        pos.push({ x: e.touches[i].pageX, y: e.touches[i].pageY });
+
+            utils
+                // 平移及缩放
+                .ondown(cover, function (e) {
+                    if (__.state.show && __.state.load == CLIP.STATE.LOADED) {
+                        ontouch = 1;
+                        pos = [];
+                        for (var i = 0, l = e.touches.length; i < l; i++) {
+                            pos.push({ x: e.touches[i].pageX, y: e.touches[i].pageY });
+                        }
                     }
-                }
-                e.preventDefault();
-                e.stopPropagation();
-            });
-            cover.addEventListener("touchmove", function (e) {
-                if (ontouch) {
-                    var width = __.width;
-                    var height = __.height;
-                    var size = view.size;
-                    var x, y, x2, y2;
-                    var scale = transform.scale;
-                    var x1 = e.touches[0].pageX;
-                    var y1 = e.touches[0].pageY;
-
-                    if (e.touches.length == 2 && pos.length == 2) { // 缩放
-                        x2 = e.touches[1].pageX;
-                        y2 = e.touches[1].pageY;
-                        var cx = (pos[0].x + pos[1].x) / 2;
-                        var cy = (pos[0].y + pos[1].y) / 2;
-
-                        // 双指距离改变量
-                        var l1 = Math.sqrt(Math.pow(pos[1].x - pos[0].x, 2) + Math.pow(pos[1].y - pos[0].y, 2));
-                        var l2 = Math.sqrt(Math.pow(x2 - x1, 2) + Math.pow(y2 - y1, 2));
-                        var sl = l2 / l1;
-
-                        // 将绕 cx,cy 缩放转换成绕可视区域左上角缩放
-                        scale = transform.scale * sl;
-                        var ds = (sl - 1) / scale;
-                        x = transform.x + cx * ds;
-                        y = transform.y + cy * ds;
-                    } else { // 平移
-                        x = transform.x + (pos[0].x - x1) / scale;
-                        y = transform.y + (pos[0].y - y1) / scale;
+                    e.preventDefault();
+                    e.stopPropagation();
+                })
+                .onmove(cover, function (e) {
+                    if (ontouch) {
+                        var width = __.width;
+                        var height = __.height;
+                        var size = view.size;
+                        var x, y, x2, y2;
+                        var scale = transform.scale;
+                        var x1 = e.touches[0].pageX;
+                        var y1 = e.touches[0].pageY;
+    
+                        if (e.touches.length == 2 && pos.length == 2) { // 缩放
+                            x2 = e.touches[1].pageX;
+                            y2 = e.touches[1].pageY;
+                            var cx = (pos[0].x + pos[1].x) / 2;
+                            var cy = (pos[0].y + pos[1].y) / 2;
+    
+                            // 双指距离改变量
+                            var l1 = Math.sqrt(Math.pow(pos[1].x - pos[0].x, 2) + Math.pow(pos[1].y - pos[0].y, 2));
+                            var l2 = Math.sqrt(Math.pow(x2 - x1, 2) + Math.pow(y2 - y1, 2));
+                            var sl = l2 / l1;
+    
+                            // 将绕 cx,cy 缩放转换成绕可视区域左上角缩放
+                            scale = transform.scale * sl;
+                            var ds = (sl - 1) / scale;
+                            x = transform.x + cx * ds;
+                            y = transform.y + cy * ds;
+                        } else { // 平移
+                            x = transform.x + (pos[0].x - x1) / scale;
+                            y = transform.y + (pos[0].y - y1) / scale;
+                        }
+    
+                        setTransform(x, y, scale);
+    
+                        pos[0].x = x1;
+                        pos[0].y = y1;
+                        if (pos.length == 2) {
+                            pos[1].x = x2;
+                            pos[1].y = y2;
+                        }
                     }
-
-                    setTransform(x, y, scale);
-
-                    pos[0].x = x1;
-                    pos[0].y = y1;
-                    if (pos.length == 2) {
-                        pos[1].x = x2;
-                        pos[1].y = y2;
+                    e.preventDefault();
+                    e.stopPropagation();
+                })
+                .onup(cover, function () {
+                    ontouch = 0;
+                })
+                // 取消
+                .ontap(utils.$(".js_clip_cancel", iDoc), function () {
+                    self.hide("cancel");
+                })
+                // 裁剪
+                .ontap(utils.$(".js_clip_save", iDoc), function () {
+                    if (!/disable/.test(this.className)) {
+                        self.save();
                     }
-                }
-                e.preventDefault();
-                e.stopPropagation();
-            });
-            cover.addEventListener("touchend", function () {
-                ontouch = 0;
-            });
-            cover.addEventListener("touchcancel", function () {
-                ontouch = 0;
-            });
+                })
+                // 选择文件
+                .ontap(utils.$(".js_layer", iDoc), function () {
+                    if (this.getAttribute("data-type") == "empty") {
+                        var input = utils.$("#file", iDoc);
+                        if (!input) {
+                            input = iDoc.createElement("input");
+                            input.id = "file";
+                            input.type = "file";
+                            input.style.display = "none";
+                            input.accept = "image/*";
+                            iDoc.body.appendChild(input);
+                            input.onchange = function () {
+                                if (this.files[0]) {
+                                    self.load(this.files[0]);
+                                }
+                            }
+                        };
+                        input.click();
+                    }
+                });
+            // 滚轮缩放
             cover.addEventListener("mousewheel", function (e) {
                 if (__.state.show && __.state.load == CLIP.STATE.LOADED) {
                     var scale = transform.scale * (e.deltaY > 0 ? 0.9 : 1 / 0.9);
@@ -710,33 +774,6 @@
                 }
                 e.preventDefault();
                 e.stopPropagation();
-            });
-            utils.ontap(utils.$(".js_clip_cancel", iDoc), function () {
-                self.hide("cancel");
-            });
-            utils.ontap(utils.$(".js_clip_save", iDoc), function () {
-                if (!/disable/.test(this.className)) {
-                    self.save();
-                }
-            });
-            utils.ontap(utils.$(".js_layer", iDoc), function () {
-                if (this.getAttribute("data-type") == "empty") {
-                    var input = utils.$("#file", iDoc);
-                    if (!input) {
-                        input = iDoc.createElement("input");
-                        input.id = "file";
-                        input.type = "file";
-                        input.style.display = "none";
-                        input.accept = "image/*";
-                        iDoc.body.appendChild(input);
-                        input.onchange = function () {
-                            if (this.files[0]) {
-                                self.load(this.files[0]);
-                            }
-                        }
-                    };
-                    input.click();
-                }
             });
 
             // 标记弹窗已打开

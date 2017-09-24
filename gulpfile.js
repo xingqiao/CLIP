@@ -18,8 +18,6 @@ var paths = {
     bundle: "clip.js"
 };
 
-var babelOpts = {};
-
 gulp.task("clean", function () {
     del([
         paths.dest,
@@ -35,7 +33,9 @@ gulp.task("js", ["jshint"], function () {
     return gulp
         .src(paths.js, { base: "src" })
         .pipe(concat(paths.bundle))
-        .pipe(babel(babelOpts))
+        .pipe(babel({
+            presets: ["es2015"]
+        }))
         .pipe(gulpif(argv.p, uglify({
             compress: {
                 drop_debugger: true

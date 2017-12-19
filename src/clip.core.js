@@ -694,18 +694,18 @@
                         var scale = transform.scale;
                         var x1 = e.touches[0].pageX;
                         var y1 = e.touches[0].pageY;
-    
+
                         if (e.touches.length == 2 && pos.length == 2) { // 缩放
                             x2 = e.touches[1].pageX;
                             y2 = e.touches[1].pageY;
                             var cx = (pos[0].x + pos[1].x) / 2;
                             var cy = (pos[0].y + pos[1].y) / 2;
-    
+
                             // 双指距离改变量
                             var l1 = Math.sqrt(Math.pow(pos[1].x - pos[0].x, 2) + Math.pow(pos[1].y - pos[0].y, 2));
                             var l2 = Math.sqrt(Math.pow(x2 - x1, 2) + Math.pow(y2 - y1, 2));
                             var sl = l2 / l1;
-    
+
                             // 将绕 cx,cy 缩放转换成绕可视区域左上角缩放
                             scale = transform.scale * sl;
                             var ds = (sl - 1) / scale;
@@ -715,9 +715,9 @@
                             x = transform.x + (pos[0].x - x1) / scale;
                             y = transform.y + (pos[0].y - y1) / scale;
                         }
-    
+
                         setTransform(x, y, scale);
-    
+
                         pos[0].x = x1;
                         pos[0].y = y1;
                         if (pos.length == 2) {

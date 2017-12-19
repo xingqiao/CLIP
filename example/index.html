@@ -48,18 +48,22 @@ new CLIP({
 var params = {
     // shape: CLIP.SHAPE.SQUARE,
     shape: CLIP.SHAPE.CIRCLE,
-    background: "#0ff",
-    width: 500,
-    height: 500
+    // shape: CLIP.SHAPE.RECT,
+    // rectRatio: 2,
+    // rectRatio: .5,
+    // background: "#0ff",
+    // width: 500,
+    // height: 500
 };
 "loading load show hide error save".split(" ").forEach(function (evt) {
     params["on" + evt] = function () {
         console.log(evt, arguments);
         if (evt == "save") {
+            var r = arguments[0];
             var result = document.querySelector(".js_result");
-            result.innerHTML = "";
+            result.innerHTML = "<div>" + r.width + "x" + r.height + "</div>";
             var img = new Image();
-            img.src = arguments[0].data;
+            img.src = r.data;
             img.style.width = "100%";
             result.appendChild(img);
         }

@@ -12,7 +12,7 @@
 
 - 支持解析图片、Canvas、文件、图片链接
 
-- 支持裁剪成正方形、圆形
+- 支持裁剪成正方形、圆形、自定义矩形
 
 - 支持缩放操作
 
@@ -45,6 +45,7 @@ clip.load("./test.jpg").show();
 |-|-|-|-|
 | background | String | null | 裁剪出图片的背景色，默认为透明，保存成jpg时默认为白色 |
 | shape | String | "square" | 裁剪形状，值在 CLIP.SHAPE 中定义，默认是正方形 |
+| rectRatio | Number | \- | 矩形裁剪形状宽高比，当 type=CLIP.SHAPE.RECT 时有效，值为 宽:高，默认为 1 |
 | type | String | "image/png" | 保存的图片类型，默认是 image/png，值在 CLIP.TYPE 中定义 |
 | quality | Number | \- | 保存的jpg图片质量，type=image/jpeg 时有效，有效值0~1 |
 | width | Number | \- | 保存图片的宽度，不传该值时根据height的值等比缩放 |
@@ -103,6 +104,7 @@ clip.load("./test.jpg").show();
 |-|-|-|
 | CLIP.SHAPE.CIRCLE | "circle" | 圆形 |
 | CLIP.SHAPE.SQUARE | "square" | 正方形 |
+| CLIP.SHAPE.RECT | "rect" | 正方形 |
 
 ### 保存的图片类型 CLIP.TYPE
 

@@ -52,7 +52,12 @@
         /**
          * 正方形
          */
-        SQUARE: "square"
+        SQUARE: "square",
+
+        /**
+         * 矩形
+         */
+        RECT: "rect"
     };
 
     /**
@@ -81,6 +86,11 @@
          * 保存的图片类型，默认是 image/png，值在 CLIP.TYPE 中定义
          */
         type: CLIP.TYPE.PNG,
+
+        /**
+         * 矩形裁剪形状宽高比，当 type=CLIP.SHAPE.RECT 时有效，值为 宽:高
+         */
+        rectRatio: 1,
 
         /**
          * 保存的jpg图片质量，type=image/jpeg 时有效，有效值0~1

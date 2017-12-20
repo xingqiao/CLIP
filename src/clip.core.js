@@ -250,7 +250,7 @@
          * @param {String} opts.background 裁剪出图片的背景色，默认为透明，保存成jpg时默认为白色
          * @param {String} opts.shape 裁剪形状，值在 CLIP.SHAPE 中定义，默认是正方形
          * @param {String} opts.type 保存的图片类型，默认是 image/png，值在 CLIP.TYPE 中定义
-         * @param {String} opts.rectRatio 矩形裁剪形状宽高比，当 type=CLIP.SHAPE.RECT 时有效，值为 宽:高，默认为 1
+         * @param {String} opts.rectRatio 矩形裁剪形状宽高比，当 type=CLIP.SHAPE.RECT 时有效，值为 宽:高，默认为 1，相当于正方形
          * @param {Number} opts.quality 保存的jpg图片质量，type=image/jpeg 时有效，有效值0~1
          * @param {Number} opts.width 保存图片的宽度，不传该值时根据height的值等比缩放
          * @param {Number} opts.height 保存图片的高度，不传该值时根据width的值等比缩放
@@ -907,13 +907,6 @@
                     ctx.clip();
                 }
                 ctx.drawImage(__.canvas, x, y, width, height, 0, 0, width, height);
-                ///////////////////////////////////////
-                console.log(x, y, width, height)
-                // var result = document.querySelector(".js_result");
-                // result.innerHTML = "";
-                // var img = new Image();
-                // img.src = canvas.toDataURL("image/jpeg");
-                // document.body.appendChild(img);
 
                 // 调整大小
                 if (opts.width > 0 || opts.height > 0) {

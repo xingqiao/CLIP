@@ -47,13 +47,13 @@ new CLIP({
 <script>
 var params = {
     // shape: CLIP.SHAPE.SQUARE,
-    shape: CLIP.SHAPE.CIRCLE,
-    // shape: CLIP.SHAPE.RECT,
-    // rectRatio: 2,
+    // shape: CLIP.SHAPE.CIRCLE,
+    shape: CLIP.SHAPE.RECT,
+    rectRatio: 2,
     // rectRatio: .5,
     // background: "#0ff",
-    // width: 500,
-    // height: 500
+    width: 500,
+    height: 300
 };
 "loading load show hide error save".split(" ").forEach(function (evt) {
     params["on" + evt] = function () {

@@ -936,12 +936,10 @@
             // 滚轮缩放
             cover.addEventListener("mousewheel", function (e) {
                 if (__.state.show && __.state.load == CLIP.STATE.LOADED) {
-                    var scale = transform.scale * (e.deltaY > 0 ? 0.9 : 1 / 0.9);
-                    var cx = e.clientX;
-                    var cy = e.clientY;
-                    var ds = scale - transform.scale;
-                    var x = transform.x + cx * ds;
-                    var y = transform.y + cy * ds;
+                    let scale = transform.scale * (e.deltaY > 0 ? 0.9 : 1 / 0.9);
+                    let ds = 1 / transform.scale - 1 / scale;
+                    let x = transform.x + ds * e.clientX;
+                    let y = transform.y + ds * e.clientY;
                     setTransform(x, y, scale);
                 }
                 e.preventDefault();

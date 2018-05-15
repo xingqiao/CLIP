@@ -110,7 +110,7 @@
          * 扩展对象
          */
         extend: function () {
-            var options, name, src, copy, copyIsArray, clone,
+            let options, name, src, copy, copyIsArray, clone,
                 args = arguments,
                 target = args[0] || {},
                 i = 1,
@@ -123,13 +123,11 @@
                 i++;
             }
 
-            if (!utils.isObject(target) && !utils.isFunction(target)) {
-                target = {};
-            }
-
             if (i === length) {
-                target = this;
+                target = {};
                 i--;
+            } else if (!utils.isObject(target) && !utils.isFunction(target)) {
+                target = {};
             }
 
             for (; i < length; i++) {
@@ -140,16 +138,14 @@
                         if (target === copy) {
                             continue;
                         }
-                        if (deep && copy && (jQuery.isPlainObject(copy) ||
-                            (copyIsArray = Array.isArray(copy)))) {
+                        if (deep && copy && ((copyIsArray = Array.isArray(copy)) || utils.isObject(copy))) {
                             if (copyIsArray) {
                                 copyIsArray = false;
                                 clone = src && Array.isArray(src) ? src : [];
-
                             } else {
-                                clone = src && jQuery.isPlainObject(src) ? src : {};
+                                clone = src && utils.isObject(src) ? src : {};
                             }
-                            target[name] = jQuery.extend(deep, clone, copy);
+                            target[name] = utils.extend(deep, clone, copy);
                         } else if (copy !== undefined) {
                             target[name] = copy;
                         }
@@ -157,8 +153,115 @@
                 }
             }
 
-            // Return the modified object
             return target;
+        },
+        /**
+         * 解析图片方向
+         *  JPEG格式介绍 http://www.cppblog.com/lymons/archive/2010/02/23/108266.aspx
+         */
+        parseImgOrientation: function parseImgOrientation(file, callback) {
+            var reader = new FileReader();
+            function _readFile(pos, size, callback) {
+                reader.onload = function (e) {
+                    if (this.result && this.result.byteLength > 0) {
+                        try {
+                            var data = new Uint8Array(this.result, 0, this.result.byteLength);
+                            callback && callback(null, pos, data);
+                        } catch (ex) {
+                            callback && callback(ex);
+                        }
+                    } else {
+                        callback && callback("File End");
+                    }
+                };
+                try {
+                    reader.readAsArrayBuffer(file.slice(pos, size));
+                } catch (ex) {
+                    callback && callback(ex);
+                }
+            };
+
+            function _parseNum(big_endian, data, offset, size) {
+                var num = 0;
+                offset = offset > 0 ? offset : 0;
+                size = size > 0 ? size : data.length - offset;
+                for (var i = 0; i < size; i++) {
+                    num <<= 8;
+                    num += data[big_endian ? offset + i : offset + size - i - 1];
+                }
+                return num;
+            };
+
+            // 获取 Exif 内容
+            function _getExif(pos, data, callback) {
+                // 定位到 APP1
+                if (data[0] == 0xFF && data[1] == 0xE1) {
+                    // 判断是否是 Exif
+                    if (data[4] == 0x45 && data[5] == 0x78 && data[6] == 0x69 && data[7] == 0x66) {	// Exif
+                        callback && callback(null, pos + 10, data.slice(10))
+                    } else {
+                        callback && callback("Not Exif");
+                    }
+                } else {
+                    pos += _parseNum(true, data, 2, 2);
+                    _readFile(pos, 8000, function (err, pos, data) {
+                        if (err) {
+                            callback && callback(err);
+                        } else {
+                            _getExif(pos, data, callback);
+                        }
+                    });
+                }
+            };
+
+            // 读取文件比较耗费时间，所以一次性预读取1K数据
+            _readFile(0, 8000, function (err, pos, data) {
+                // 判断是否是jpeg格式
+                if (data[0] == 0xFF && data[1] == 0xD8) {
+                    pos += 2;
+
+                    // 获取 Exif 内容
+                    _getExif(pos, data.slice(2), function (err, pos, data) {
+                        if (err) {
+                            return callback && callback("Not Exif");
+                        }
+
+                        // 字节序
+                        var endian;
+                        if (data[0] == 0x49 && data[1] == 0x49) {	// II Intel 小端模式
+                            endian = 0;
+                        } else if (data[0] == 0x4D && data[1] == 0x4D) {	// MM Motorola 大端模式
+                            endian = 1;
+                        } else {
+                            return callback && callback("Unknown Endian");
+                        }
+
+                        // 定位到 TIFF 标签
+                        var offset = _parseNum(endian, data, 4, 4);
+
+                        // 标签数
+                        var tagNum = _parseNum(endian, data, offset, 2);
+                        offset += 2;
+
+                        // 解析 TIFF 标签
+                        for (var i = 0; i < tagNum; i++) {
+                            var tag = _parseNum(endian, data, offset, 2);
+
+                            // Orientation 标签
+                            if (tag == 0x0112) {	// 0x0112 Orientation
+                                var orientation = _parseNum(endian, data, offset + 8, 2);
+                                return callback && callback(null, orientation);
+                            }
+
+                            offset += 12;
+                        }
+
+                        callback && callback(null, 0);
+                    });
+                } else {
+                    callback && callback("Not jpeg");
+                }
+            });
         }
     };
     Array.prototype.forEach.call(["Object", "Function", "String", "Number", "Array", "Boolean", "File", { type: "Img", key: "HTMLImageElement" }, { type: "Canvas", key: "HTMLCanvasElement" }], function (item) {
@@ -197,14 +300,69 @@
          * 加载图片到canvas
          * @param {HTMLCanvasElement} canvas 画布
          * @param {Image} img 要绘制的图片
+         * @param {Number} orientation 旋转方向
+         *  1 正常
+         *  2 水平翻转
+         *  3 绕中心旋转180°
+         *  4 垂直翻转
+         *  5 绕主对角线翻转180°（先垂直翻转，再顺时针旋转90°）
+         *  6 顺时针旋转90°
+         *  7 绕次斜对角线翻转180°（先水平翻转，再逆时针旋转90°）
+         *  8 逆时针旋转90°
          * @static
          */
-        static loadImgToCanvas(canvas, img) {
+        static loadImgToCanvas(canvas, img, orientation) {
             var ctx = canvas.getContext("2d");
-            var width = canvas.width = img.width;
-            var height = canvas.height = img.height;
-            ctx.clearRect(0, 0, width, height);
-            ctx.drawImage(img, 0, 0);
+            var width = img.width;
+            var height = img.height;
+            if (orientation >= 5 && orientation <= 8) {
+                width = img.height;
+                height = img.width;
+            }
+            canvas.width = width;
+            canvas.height = height;
+            ctx.save();
+            switch (orientation) {
+                case 2: // 水平翻转
+                    ctx.translate(width, 0);
+                    ctx.scale(-1, 1);
+                    break;
+                case 3: // 绕中心旋转180°
+                    ctx.translate(width, height);
+                    ctx.rotate(Math.PI);
+                    break;
+                case 4: // 垂直翻转
+                    ctx.translate(0, height);
+                    ctx.scale(1, -1);
+                    break;
+                case 5: // 绕主对角线翻转180°（先垂直翻转，再顺时针旋转90°）
+                    ctx.rotate(0.5 * Math.PI);
+                    ctx.scale(1, -1);
+                    break;
+                case 6: // 顺时针旋转90°
+                    ctx.rotate(0.5 * Math.PI);
+                    ctx.translate(0, -img.height);
+                    break;
+                case 7: // 绕次斜对角线翻转180°（先水平翻转，再逆时针旋转90°）
+                    ctx.rotate(0.5 * Math.PI);
+                    ctx.translate(width, -img.height);
+                    ctx.scale(-1, 1);
+                    break;
+                case 8: // 逆时针旋转90°
+                    ctx.rotate(-0.5 * Math.PI);
+                    ctx.translate(-img.width, 0);
+                    break;
+                default:
+                    break;
+            }
+            ctx.clearRect(0, 0, img.width, img.height);
+            ctx.drawImage(img, 0, 0, img.width, img.height);
+            ctx.restore();
+            return {
+                width: width,
+                height: height,
+                canvas: canvas
+            }
         }
 
         /**
@@ -806,19 +964,31 @@
         /**
          * 加载图片
          * @param {Image|Canvas|File|String} img 图片标签或图片链接
+         * @param {Number} orientation 旋转方向
+         *  1 正常
+         *  2 水平翻转
+         *  3 绕中心旋转180°
+         *  4 垂直翻转
+         *  5 绕主对角线翻转180°（先垂直翻转，再顺时针旋转90°）
+         *  6 顺时针旋转90°
+         *  7 绕次斜对角线翻转180°（先水平翻转，再逆时针旋转90°）
+         *  8 逆时针旋转90°
          * @public
          */
-        load(img) {
+        load(img, orientation) {
             var self = this;
             var __ = self.__;
 
             if (utils.isFile(img)) {
-                CLIP.getFileUrl(img, function (error, url) {
-                    if (error) {
-                        self._trigger(error, CLIP.ERROR.OPEN_FILE_FAIL);
-                    } else if (url) {
-                        self.load(url);
-                    }
+                // 解析图片方向
+                utils.parseImgOrientation(img, function (error, orien) {
+                    CLIP.getFileUrl(img, function (error, url) {
+                        if (error) {
+                            self._trigger(error, CLIP.ERROR.OPEN_FILE_FAIL);
+                        } else if (url) {
+                            self.load(url, orien);
+                        }
+                    });
                 });
             } else {
                 if (utils.isImg(img)) {
@@ -826,9 +996,9 @@
                 }
 
                 var _load = function (img) {
-                    CLIP.loadImgToCanvas(__.canvas, img);
-                    __.width = img.width;
-                    __.height = img.height;
+                    var ret = CLIP.loadImgToCanvas(__.canvas, img, orientation);
+                    __.width = ret.width;
+                    __.height = ret.height;
                     self._trigger("load");
                 };
 

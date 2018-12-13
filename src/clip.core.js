@@ -159,7 +159,7 @@
          * 解析图片方向
          *  JPEG格式介绍 http://www.cppblog.com/lymons/archive/2010/02/23/108266.aspx
          */
-        parseImgOrientation: function parseImgOrientation(file, callback) {
+        parseImgOrientation: function (file, callback) {
             var reader = new FileReader();
             function _readFile(pos, size, callback) {
                 reader.onload = function (e) {
@@ -262,6 +262,17 @@
                     callback && callback("Not jpeg");
                 }
             });
+        },
+        /** base64转blob */
+        base64toBlob: function (base64, type) {
+            // 将base64转为Unicode规则编码
+            var bstr = atob(base64, type),
+                n = bstr.length,
+                u8arr = new Uint8Array(n);
+            while (n--) {
+                u8arr[n] = bstr.charCodeAt(n) // 转换编码后才可以使用charCodeAt 找到Unicode编码
+            }
+            return new Blob([u8arr], { type })
         }
     };
     Array.prototype.forEach.call(["Object", "Function", "String", "Number", "Array", "Boolean", "File", { type: "Img", key: "HTMLImageElement" }, { type: "Canvas", key: "HTMLCanvasElement" }], function (item) {
@@ -977,8 +988,8 @@
             var self = this;
             var __ = self.__;
 
-            if (utils.isFile(img)) {
-                // 解析图片方向
+            // 没传orientation时要先解析图片方向
+            if (orientation == null && utils.isFile(img)) {
                 utils.parseImgOrientation(img, function (error, orien) {
                     CLIP.getFileUrl(img, function (error, url) {
                         if (error) {
@@ -988,6 +999,15 @@
                         }
                     });
                 });
+            } else if (orientation == null && /^data:image/.test(img)) {
+                try {
+                    var blob = utils.base64toBlob(img.replace(/^data:image\/\w+;base64,/, ''));
+                    utils.parseImgOrientation(blob, function (error, orien) {
+                        self.load(img, orien);
+                    });
+                } catch (error) {
+                    self.load(img, 1);
+                }
             } else {
                 if (utils.isImg(img)) {
                     img = img.src;
@@ -1004,7 +1024,10 @@
                     self._trigger("loading");
 
                     var tmpImg = new Image();
-                    tmpImg.crossOrigin = "anonymous";
+                    if (!(utils.isString(img) && /^data:image/.test(img))) {
+                        tmpImg.crossOrigin = "anonymous";
+                    }
+
                     tmpImg.onload = function () {
                         _load(tmpImg);
                     }
